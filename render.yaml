@@ -1,0 +1,11 @@
+# Use this when the repo root IS the backend (e.g. github.com/burkaslarry/ai-crm-backend).
+# In Render: New → Blueprint → connect this repo. No root directory needed.
+services:
+  - type: web
+    name: ai-crm-api
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production

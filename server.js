@@ -5,13 +5,21 @@
 
 import express from 'express';
 import cors from 'cors';
-import { initSchema } from './db/schema.js';
+import { db, initSchema } from './db/schema.js';
+import { runSeed } from './db/seed.js';
 import leadsRouter from './routes/leads.js';
 import inquiriesRouter from './routes/inquiries.js';
 import aiRouter from './routes/ai.js';
 import automationsRouter from './routes/automations.js';
 
 initSchema();
+
+// Seed on first start when DB is empty (e.g. Render ephemeral disk or new deploy).
+const ruleCount = db.prepare('SELECT COUNT(*) as n FROM automation_rules').get().n;
+if (ruleCount === 0) {
+  runSeed();
+  console.log('Seeded default rules and sample leads.');
+}
 
 const app = express();
 app.use(cors());
