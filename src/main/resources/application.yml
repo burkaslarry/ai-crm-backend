@@ -1,0 +1,21 @@
+server:
+  port: ${PORT:3001}
+
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/crm;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: false
+  sql:
+    init:
+      mode: always
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+
+logging:
+  level:
+    org.springframework.web: INFO
