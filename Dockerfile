@@ -1,8 +1,15 @@
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
+# Install unzip; install Gradle (wrapper jar is not in repo due to .gitignore *.jar)
+RUN apt-get update && apt-get install -y --no-install-recommends unzip ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+  v="8.7"; \
+  curl -sSL "https://services.gradle.org/distributions/gradle-${v}-bin.zip" -o /tmp/gradle.zip; \
+  unzip -q /tmp/gradle.zip -d /opt; \
+  ln -sf "/opt/gradle-${v}/bin/gradle" /usr/local/bin/gradle; \
+  rm /tmp/gradle.zip
 COPY . .
-RUN chmod +x gradlew
-RUN ./gradlew build --no-daemon -x test
+RUN gradle build --no-daemon -x test
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
