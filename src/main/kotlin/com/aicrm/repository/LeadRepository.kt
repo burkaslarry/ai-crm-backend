@@ -5,12 +5,16 @@ import com.aicrm.domain.Lead
 import com.aicrm.domain.SlotSuggestion
 import com.aicrm.domain.Task
 import com.aicrm.domain.TimelineEvent
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import java.time.Instant
 
 @Repository
-class LeadRepository(private val jdbc: JdbcTemplate) {
+class LeadRepository(
+    private val jdbc: JdbcTemplate,
+    @Value("\${app.db.dialect:h2}") private val dialect: String
+) {
 
     fun findAll(channel: String? = null, stage: String? = null): List<Lead> {
         return when {
@@ -65,13 +69,29 @@ class LeadRepository(private val jdbc: JdbcTemplate) {
     ).firstOrNull()
 
     fun insertOrReplaceTriage(t: AiTriage) {
-        jdbc.update(
-            """MERGE INTO ai_triage (lead_id, vertical, category, subcategory, intent, urgency_score,
-               extracted_fields, missing_fields, summary, recommended_actions, safety_escalate)
-               KEY(lead_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            t.leadId, t.vertical, t.category, t.subcategory, t.intent, t.urgencyScore,
-            t.extractedFields, t.missingFields, t.summary, t.recommendedActions, t.safetyEscalate
-        )
+        if (dialect == "postgresql") {
+            jdbc.update(
+                """INSERT INTO ai_triage (lead_id, vertical, category, subcategory, intent, urgency_score,
+                   extracted_fields, missing_fields, summary, recommended_actions, safety_escalate)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT (lead_id) DO UPDATE SET
+                   vertical = EXCLUDED.vertical, category = EXCLUDED.category, subcategory = EXCLUDED.subcategory,
+                   intent = EXCLUDED.intent, urgency_score = EXCLUDED.urgency_score,
+                   extracted_fields = EXCLUDED.extracted_fields, missing_fields = EXCLUDED.missing_fields,
+                   summary = EXCLUDED.summary, recommended_actions = EXCLUDED.recommended_actions,
+                   safety_escalate = EXCLUDED.safety_escalate""",
+                t.leadId, t.vertical, t.category, t.subcategory, t.intent, t.urgencyScore,
+                t.extractedFields, t.missingFields, t.summary, t.recommendedActions, t.safetyEscalate
+            )
+        } else {
+            jdbc.update(
+                """MERGE INTO ai_triage (lead_id, vertical, category, subcategory, intent, urgency_score,
+                   extracted_fields, missing_fields, summary, recommended_actions, safety_escalate)
+                   KEY(lead_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                t.leadId, t.vertical, t.category, t.subcategory, t.intent, t.urgencyScore,
+                t.extractedFields, t.missingFields, t.summary, t.recommendedActions, t.safetyEscalate
+            )
+        }
     }
 
     fun getTasks(leadId: String): List<Task> = jdbc.query(

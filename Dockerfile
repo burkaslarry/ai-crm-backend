@@ -1,25 +1,16 @@
-# Build stage (use Debian-based image to avoid Gradle native crash on Alpine/ARM)
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
+COPY . .
+RUN chmod +x gradlew
+RUN ./gradlew build --no-daemon -x test
 
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle.kts settings.gradle.kts gradle.properties ./
-RUN ./gradlew dependencies --no-daemon || true
-
-COPY src src
-RUN ./gradlew bootJar --no-daemon -x test
-
-# Run stage
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-
-RUN useradd -r -u 1000 -m appuser
-
-COPY --from=build /app/build/libs/*.jar app.jar
-RUN chown appuser /app/app.jar
-USER appuser
-
-EXPOSE 3001
-ENV PORT=3001
+EXPOSE 10000
+# Use Render profile so app picks up DATABASE_JDBC_URL, DATABASE_USERNAME, DATABASE_PASSWORD at runtime
+ENV SPRING_PROFILES_ACTIVE=render
+ENV PORT=10000
+# Copy the runnable boot JAR (version from build.gradle.kts)
+ARG JAR_VERSION=1.0.0
+COPY --from=build /app/build/libs/ai-crm-api-${JAR_VERSION}.jar app.jar
 ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT} -jar app.jar"]

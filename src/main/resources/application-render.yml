@@ -1,0 +1,16 @@
+# Render profile: DataSource from DATABASE_URL (postgres://...) via RenderDataSourceConfig.
+# Server port from PORT (Render sets this, default 10000).
+server:
+  port: ${PORT:10000}
+
+app:
+  db:
+    dialect: postgresql
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  sql:
+    init:
+      mode: always
