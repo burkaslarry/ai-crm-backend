@@ -8,7 +8,11 @@ import com.aicrm.domain.TimelineEvent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
+import java.sql.Timestamp
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 
 @Repository
 class LeadRepository(
@@ -117,10 +121,30 @@ class LeadRepository(
     }
 
     fun insertTask(id: String, leadId: String, type: String, title: String, dueAt: String?) {
+        val dueTs = parseToTimestamp(dueAt)
         jdbc.update(
             "INSERT INTO tasks (id, lead_id, type, title, due_at) VALUES (?, ?, ?, ?, ?)",
-            id, leadId, type, title, dueAt
+            id, leadId, type, title, dueTs
         )
+    }
+
+    /** Parse string to java.sql.Timestamp so Postgres receives timestamp type, not varchar. */
+    private fun parseToTimestamp(s: String?): Timestamp? {
+        if (s.isNullOrBlank()) return null
+        return try {
+            Timestamp.from(Instant.parse(s))
+        } catch (_: DateTimeParseException) {
+            try {
+                val ldt = LocalDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                Timestamp.valueOf(ldt)
+            } catch (_: DateTimeParseException) {
+                try {
+                    Timestamp.valueOf(LocalDateTime.parse(s, DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                } catch (_: DateTimeParseException) {
+                    null
+                }
+            }
+        }
     }
 
     fun completeTask(taskId: String, leadId: String) {
