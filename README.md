@@ -27,6 +27,15 @@ docker run -p 3001:3001 -e PORT=3001 ai-crm-api
 
 Data is stored in `./data/crm` inside the container (ephemeral unless you mount a volume).
 
+## Deploy on Render
+
+The app uses the `render` Spring profile and expects **DATABASE_URL** (Postgres `postgres://...` URL).
+
+- **If you use the root repo Blueprint** (`render.yaml`): the web service is linked to database `ai-crm-db` and Render sets DATABASE_URL automatically.
+- **If you use your own database:** set **DATABASE_URL** in the web service environment: Render Dashboard → **Web Services** → **ai-crm-backend** → **Environment** → add **DATABASE_URL** with the connection string from your database’s **Connect** tab (Internal or External URL).
+
+If DATABASE_URL is missing, the app fails at startup with a message pointing to this setup.
+
 ## API
 
 - `GET /api/health` — health check

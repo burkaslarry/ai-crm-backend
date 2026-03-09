@@ -11,23 +11,32 @@ import javax.sql.DataSource
 
 /**
  * When running with profile "render", parse DATABASE_URL (postgres://... from Render)
- * and provide a DataSource. Falls back to default H2 if DATABASE_URL is not set.
+ * and provide a DataSource. Also supports INTERNAL_DATABASE_URL if set by Render when linking a DB.
  */
 @Configuration
 @Profile("render")
 class RenderDataSourceConfig {
 
     @Value("\${DATABASE_URL:}")
-    private lateinit var databaseUrl: String
+    private var databaseUrl: String = ""
+
+    @Value("\${INTERNAL_DATABASE_URL:}")
+    private var internalDatabaseUrl: String = ""
 
     @Bean
     fun dataSource(): DataSource {
-        if (databaseUrl.isBlank()) {
-            throw IllegalStateException("Render profile active but DATABASE_URL is not set. Set it in Render dashboard.")
+        val url = databaseUrl.takeIf { it.isNotBlank() } ?: internalDatabaseUrl.takeIf { it.isNotBlank() }
+        if (url.isNullOrBlank()) {
+            throw IllegalStateException(
+                "Render profile active but DATABASE_URL is not set. " +
+                "On Render: Dashboard → Web Services → ai-crm-backend → Environment → add DATABASE_URL with your " +
+                "Postgres connection string (from your database's Connect tab, Internal or External URL). " +
+                "If using Blueprint, ensure the web service is linked to the database in render.yaml."
+            )
         }
-        val (url, username, password) = parsePostgresUrl(databaseUrl)
+        val (jdbcUrlStr, username, password) = parsePostgresUrl(url)
         val ds = HikariDataSource().apply {
-            jdbcUrl = url
+            jdbcUrl = jdbcUrlStr
             this.username = username
             this.password = password
             driverClassName = "org.postgresql.Driver"
