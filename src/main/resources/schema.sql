@@ -80,3 +80,61 @@ CREATE INDEX IF NOT EXISTS idx_tasks_lead ON tasks(lead_id);
 CREATE INDEX IF NOT EXISTS idx_timeline_lead ON timeline(lead_id);
 CREATE INDEX IF NOT EXISTS idx_scheduled_jobs_run_at ON scheduled_jobs(run_at);
 CREATE INDEX IF NOT EXISTS idx_scheduled_jobs_status ON scheduled_jobs(status);
+
+CREATE TABLE IF NOT EXISTS rag_services (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(500) NOT NULL,
+    description CLOB,
+    region VARCHAR(10) NOT NULL DEFAULT 'hk',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS rag_products (
+    id VARCHAR(36) PRIMARY KEY,
+    name VARCHAR(500) NOT NULL,
+    description CLOB,
+    region VARCHAR(10) NOT NULL DEFAULT 'hk',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_rag_services_region ON rag_services(region);
+CREATE INDEX IF NOT EXISTS idx_rag_products_region ON rag_products(region);
+
+CREATE TABLE IF NOT EXISTS follow_up_cases (
+    id VARCHAR(36) PRIMARY KEY,
+    case_name VARCHAR(500) NOT NULL,
+    contact VARCHAR(500),
+    status VARCHAR(50),
+    notes CLOB,
+    lead_ref VARCHAR(64),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_follow_up_cases_status ON follow_up_cases(status);
+CREATE INDEX IF NOT EXISTS idx_follow_up_cases_created ON follow_up_cases(created_at);
+
+CREATE TABLE IF NOT EXISTS rag_documents (
+    id VARCHAR(36) PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,
+    region VARCHAR(10) NOT NULL DEFAULT 'sg',
+    extracted_text CLOB NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS rag_document_links (
+    id VARCHAR(36) PRIMARY KEY,
+    document_id VARCHAR(36) NOT NULL REFERENCES rag_documents(id),
+    item_type VARCHAR(20) NOT NULL,
+    item_id VARCHAR(36) NOT NULL,
+    item_name VARCHAR(500) NOT NULL,
+    score DOUBLE PRECISION NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_rag_document_links_document ON rag_document_links(document_id);
+CREATE INDEX IF NOT EXISTS idx_rag_document_links_item ON rag_document_links(item_type, item_id);
+
+CREATE TABLE IF NOT EXISTS users (
+    id VARCHAR(36) PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255),
+    role VARCHAR(20) NOT NULL DEFAULT 'operator',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);

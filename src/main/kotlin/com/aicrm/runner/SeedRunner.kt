@@ -33,7 +33,10 @@ class SeedRunner(
             Sample("whatsapp", "I did facial yesterday, today redness and swelling. What should I do?", "+852 9876 5432", null),
             Sample("web", "想預約醫美諮詢，激光脫毛同面部療程，請問價錢同可約時間？地點銅鑼灣。", "chan@email.com", "陳小姐"),
             Sample("web", "請問雷射淡斑療程幾錢？想約下星期，中環或尖沙咀分店都可以。", "+852 6111 2222", "Wong"),
-            Sample("whatsapp", "I want to join beginner nail course. Weekend only. When's the next intake? Cost?", "nails@mail.com", null)
+            Sample("whatsapp", "I want to join beginner nail course. Weekend only. When's the next intake? Cost?", "nails@mail.com", null),
+            Sample("web", "想了解減肥針療程，第一次做有咩要注意？可否安排星期六。", "+852 9555 6666", "Lee"),
+            Sample("whatsapp", "Can I get package pricing for acne facial + serum bundle?", "client7@example.com", "Yuki"),
+            Sample("web", "想報名進階美甲班，平日晚間班是否有位？", "student@demo.com", "Mandy")
         )
         for (s in sampleInquiries) {
             val id = uuid()

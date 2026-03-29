@@ -45,9 +45,9 @@ class LeadRepository(
 
     fun insert(lead: Lead) {
         jdbc.update(
-            """INSERT INTO leads (id, channel, raw_message, name, contact, vertical, source)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            lead.id, lead.channel, lead.rawMessage, lead.name, lead.contact, lead.vertical, lead.source
+            """INSERT INTO leads (id, channel, raw_message, name, contact, stage, vertical, source, service_date)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            lead.id, lead.channel, lead.rawMessage, lead.name, lead.contact, lead.stage, lead.vertical, lead.source, lead.serviceDate
         )
     }
 
