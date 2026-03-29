@@ -83,6 +83,7 @@ class LeadService(
             leadRepository.updateServiceDate(id, req.service_date)
             if (req.service_date.isNotEmpty()) scheduledJobsService.scheduleJobsForLead(id, req.service_date)
         }
+        if (req.updateVertical) leadRepository.updateVertical(id, req.vertical)
         return leadRepository.findById(id)!!
     }
 

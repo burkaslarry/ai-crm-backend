@@ -59,5 +59,8 @@ data class CreateInquiryRequest(
 data class PatchLeadRequest(
     val stage: String?,
     val owner_id: String?,
-    val service_date: String?
+    val service_date: String?,
+    /** When true, set lead.vertical to [vertical] (null clears). When false, leave vertical unchanged. */
+    val vertical: String? = null,
+    val updateVertical: Boolean = false
 )

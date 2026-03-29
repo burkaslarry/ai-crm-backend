@@ -171,10 +171,14 @@ class LeadsController(
 
     private fun parsePatchLead(body: Any?): PatchLeadRequest {
         if (body !is Map<*, *>) return PatchLeadRequest(null, null, null)
+        val updateVertical = body.containsKey("vertical")
+        val vertical = if (updateVertical) sanitizeString(body["vertical"]?.toString(), 50) else null
         return PatchLeadRequest(
             stage = validateStage(body["stage"]?.toString()),
             owner_id = body["owner_id"]?.let { sanitizeString(it.toString(), com.aicrm.domain.MAX_SHORT) },
-            service_date = validateISODate(body["service_date"]?.toString())
+            service_date = validateISODate(body["service_date"]?.toString()),
+            vertical = vertical,
+            updateVertical = updateVertical
         )
     }
 
