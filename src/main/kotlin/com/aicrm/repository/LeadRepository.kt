@@ -43,6 +43,8 @@ class LeadRepository(
         leadRowMapper, id
     ).firstOrNull()
 
+    fun countLeads(): Long = jdbc.queryForObject("SELECT COUNT(*) FROM leads", Long::class.java) ?: 0L
+
     fun insert(lead: Lead) {
         jdbc.update(
             """INSERT INTO leads (id, channel, raw_message, name, contact, stage, vertical, source, service_date)

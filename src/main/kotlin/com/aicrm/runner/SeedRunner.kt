@@ -25,18 +25,52 @@ class SeedRunner(
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun run(args: ApplicationArguments?) {
-        if (ruleRepository.count() > 0) return
-        log.info("Seeding default rules and sample leads.")
-        ruleRepository.saveAll(automationEngineService.getDefaultRules())
+        if (ruleRepository.count() == 0L) {
+            log.info("Seeding default automation rules.")
+            ruleRepository.saveAll(automationEngineService.getDefaultRules())
+        }
+        if (leadRepository.countLeads() > 0L) {
+            log.info("Skip sample leads: database already has {} lead(s).", leadRepository.countLeads())
+            return
+        }
+        log.info("Seeding Zomate Fitness sample leads.")
         val sampleInquiries = listOf(
-            Sample("whatsapp", "Hi can I book laser hair removal this week? Prefer Thu after 6pm. Price?", "+852 9123 4567", null),
-            Sample("whatsapp", "I did facial yesterday, today redness and swelling. What should I do?", "+852 9876 5432", null),
-            Sample("web", "想預約醫美諮詢，激光脫毛同面部療程，請問價錢同可約時間？地點銅鑼灣。", "chan@email.com", "陳小姐"),
-            Sample("web", "請問雷射淡斑療程幾錢？想約下星期，中環或尖沙咀分店都可以。", "+852 6111 2222", "Wong"),
-            Sample("whatsapp", "I want to join beginner nail course. Weekend only. When's the next intake? Cost?", "nails@mail.com", null),
-            Sample("web", "想了解減肥針療程，第一次做有咩要注意？可否安排星期六。", "+852 9555 6666", "Lee"),
-            Sample("whatsapp", "Can I get package pricing for acne facial + serum bundle?", "client7@example.com", "Yuki"),
-            Sample("web", "想報名進階美甲班，平日晚間班是否有位？", "student@demo.com", "Mandy")
+            Sample(
+                "whatsapp",
+                "想預約一對一女教練，尖沙咀週六朝早得唔得？想知收費同試堂。",
+                "+852 9515 7454",
+                "陳小姐"
+            ),
+            Sample(
+                "whatsapp",
+                "Hi, I'd like a trial at Sheung Wan — women-only gym. What slots this week?",
+                "+852 9123 8899",
+                null
+            ),
+            Sample(
+                "web",
+                "請問會員計劃包唔包營養建議？想報名但想先了解上環分店時間。",
+                "wong@example.com",
+                "黃小姐"
+            ),
+            Sample(
+                "web",
+                "生酮飲食配合你哋健身課程有冇建議？純查詢，未決定報名。",
+                "+852 6888 1234",
+                "李小姐"
+            ),
+            Sample(
+                "whatsapp",
+                "上環週二晚上有冇女教練一對一？想減脂塑形。",
+                "+852 9777 0001",
+                null
+            ),
+            Sample(
+                "web",
+                "從 zoesportdiary 見到你哋，想 WhatsApp 問下柯士甸道附近點去。想約體驗。",
+                "visitor@demo.com",
+                "Amy"
+            )
         )
         for (s in sampleInquiries) {
             val id = uuid()
@@ -52,7 +86,7 @@ class SeedRunner(
                 stage = "New",
                 ownerId = null,
                 vertical = null,
-                source = null,
+                source = "zomate_demo",
                 serviceDate = null
             )
             leadRepository.insert(lead)
@@ -62,7 +96,7 @@ class SeedRunner(
             leadRepository.updateVertical(id, triageResult.vertical)
             automationEngineService.applyAutomations(id)
         }
-        log.info("Seed done: rules + {} sample leads.", sampleInquiries.size)
+        log.info("Seed done: Zomate Fitness demo — {} sample leads.", sampleInquiries.size)
     }
 
     private data class Sample(val channel: String, val raw: String, val contact: String?, val name: String?)

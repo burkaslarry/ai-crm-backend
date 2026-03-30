@@ -54,7 +54,7 @@ class AiController(
 
     @PostMapping("/draft")
     fun draft(@RequestBody body: Map<String, Any?>): ResponseEntity<Map<String, Any>> {
-        val vertical = sanitizeString(body["vertical"]?.toString(), 50) ?: "med_spa"
+        val vertical = sanitizeString(body["vertical"]?.toString(), 50) ?: "zomate_pt_1on1"
         val intent = sanitizeString(body["intent"]?.toString(), 50) ?: "info"
         val slotsRaw = body["slots"]
         val slotsStr = when (slotsRaw) {

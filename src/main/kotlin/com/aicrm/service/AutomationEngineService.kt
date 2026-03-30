@@ -24,13 +24,13 @@ class AutomationEngineService(
     fun getDefaultRules(): List<AutomationRule> = listOf(
         AutomationRule("rule-booking", "Booking intent",
             """{"intent":"book","hasTriage":true}""",
-            """[{"type":"set_stage","value":"Offered Slots"},{"type":"assign_owner","valueByVertical":{"med_spa":"receptionist-a","training":"enrollment-staff"}},{"type":"create_task","taskType":"send_slots","title":"Send 3 available slots within 15 minutes","dueMinutes":15}]""",
+            """[{"type":"set_stage","value":"Offered Slots"},{"type":"assign_owner","valueByVertical":{"zomate_pt_1on1":"zomate-coach-lead","zomate_membership_trial":"zomate-front-desk","zomate_nutrition":"zomate-wellness","med_spa":"receptionist-a","training":"enrollment-staff"}},{"type":"create_task","taskType":"send_slots","title":"Send 3 available slots within 15 minutes","dueMinutes":15}]""",
             1, 10),
         AutomationRule("rule-missing-info", "Missing key info",
             """{"missingFieldsNotEmpty":true}""",
             """[{"type":"set_stage","value":"Needs Info"},{"type":"draft_message","askTopMissing":2}]""",
             1, 20),
-        AutomationRule("rule-high-urgency", "High urgency (醫美 / aesthetic)",
+        AutomationRule("rule-high-urgency", "High urgency (asap / safety)",
             """{"urgencyMin":80}""",
             """[{"type":"create_task","taskType":"call","title":"Call within 10 minutes","dueMinutes":10},{"type":"add_banner","value":"High urgency lead"}]""",
             1, 15),
@@ -78,7 +78,10 @@ class AutomationEngineService(
                     }
                     "assign_owner" -> {
                         val valueByVertical = action["valueByVertical"] as? Map<*, *>
-                        val owner = (valueByVertical?.get(vertical) ?: action["value"])?.toString()
+                        var owner = (valueByVertical?.get(vertical) ?: action["value"])?.toString()
+                        if (owner == null && vertical.startsWith("zomate_")) {
+                            owner = "zomate-front-desk"
+                        }
                         if (owner != null) {
                             newOwner = owner
                             leadRepository.updateOwner(leadId, owner)

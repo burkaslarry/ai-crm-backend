@@ -23,20 +23,28 @@ class TriageService(
     private val objectMapper: ObjectMapper
 ) {
 
-    private val verticalKeywords = mapOf(
-        "med_spa" to listOf(
-            "laser", "facial", "hair removal", "consultation", "skin", "aesthetic", "clinic", "med spa", "treatment",
-            "脫毛", "面部", "激光", "美容", "療程", "皮膚", "諮詢", "醫美", "pigment", "acne", "slimming",
-            "雷射", "微針", "填充", "肉毒", "玻尿酸", "皮膚科", "美容醫學"
+    /** Zomate Fitness (zoesportdiary.com) — women-first gym, TST / Sheung Wan */
+    /** Order matters on equal keyword scores: PT before membership so 一對一+試堂 → PT */
+    private val verticalKeywords = linkedMapOf(
+        "zomate_nutrition" to listOf(
+            "生酮", "keto", "飲食", "餐廳", "營養", "健康飲食", "膳食", "減肥餐", "餐單"
         ),
-        "training" to listOf(
-            "course", "training", "class", "certification", "learn", "intake", "nail course", "beauty course",
-            "課程", "培訓", "學", "證書", "入讀", "美甲", "美容課程"
+        "zomate_pt_1on1" to listOf(
+            "一對一", "私教", "私人教練", "personal trainer", "pt", "gym", "健身", "女教練", "女子健身",
+            "身形", "減脂", "增肌", "zomate", "器械", "教練", "運動", "workout", "fitness", "女健身",
+            "女子", "塑造", "理想身形", "課程", "中心"
+        ),
+        "zomate_membership_trial" to listOf(
+            "會員", "報名", "試堂", "體驗", "體驗課", "收費", "membership", "trial", "月費", "package",
+            "join", "火熱招聘", "成為", "成功榜樣"
         )
     )
 
     private val intentKeywords = mapOf(
-        "book" to listOf("book", "booking", "預約", "想約", "想請", "join", "報名", "想上", "schedule", "appointment"),
+        "book" to listOf(
+            "book", "booking", "預約", "想約", "想請", "join", "報名", "想上", "schedule", "appointment",
+            "試堂", "體驗"
+        ),
         "price" to listOf("price", "cost", "fee", "價錢", "幾錢", "費用", "how much", "budget", "預算"),
         "info" to listOf("info", "information", "了解", "想知", "介紹", "what do you", "inquiry", "查詢"),
         "complaint" to listOf("complaint", "problem", "issue", "redness", "swelling", "pain", "不適", "紅腫", "痛", "有問題", "what should i do"),
@@ -46,7 +54,8 @@ class TriageService(
     private val safetyRedFlags = listOf(
         "severe allergic", "anaphylaxis", "fainting", "faint", "breathing", "chest pain", "severe infection",
         "紅腫", "腫脹", "過敏", "呼吸", "胸痛", "頭暈", "暈倒", "發燒", "感染", "發炎", "redness and swelling",
-        "what should i do", "emergency", "urgent"
+        "what should i do", "emergency", "urgent",
+        "受傷", "扭傷", "拉傷", "暈厥", "運動創傷", "training injury", "passed out"
     )
 
     fun runTriage(rawMessage: String, leadId: String): TriageResult {
@@ -107,7 +116,7 @@ class TriageService(
             }
             if (score > best.second) best = v to score
         }
-        return best.first
+        return if (best.second > 0) best.first else "zomate_pt_1on1"
     }
 
     private fun detectIntent(text: String): String {
@@ -129,7 +138,7 @@ class TriageService(
         if (intent == "complaint") score = 90
         if (intent == "book") score += 15
         if (Regex("urgent|急|盡快|asap|within\\s*\\d+\\s*(day|week)", RegexOption.IGNORE_CASE).containsMatchIn(text)) score += 20
-        if (vertical == "med_spa" && Regex("急|urgent|盡快|asap").containsMatchIn(text)) score = maxOf(score, 85)
+        if (vertical.startsWith("zomate_") && Regex("急|urgent|盡快|asap").containsMatchIn(text)) score = maxOf(score, 85)
         return score.coerceIn(0, 100)
     }
 
@@ -146,7 +155,7 @@ class TriageService(
         if (extracted.preferredTime != null || !extracted.preferredDates.isNullOrEmpty()) {
             parts.add("Preference: ${listOfNotNull(extracted.preferredTime, *extracted.preferredDates?.toTypedArray() ?: emptyArray()).filter { it.isNotEmpty() }.joinToString(", ")}")
         }
-        if (intent == "complaint") parts.add("Medical/safety concern – consider escalation.")
+        if (intent == "complaint") parts.add("Safety / injury concern – consider escalation.")
         if (missing.isNotEmpty()) parts.add("Missing: ${missing.joinToString(", ")}")
         return parts.ifEmpty { listOf("Inquiry received; triage completed.") }.joinToString(". ")
     }
@@ -156,12 +165,13 @@ class TriageService(
         if (safetyEscalate) actions.add("Escalate to manager / medical team")
         if (intent == "book") {
             actions.add("Offer 3 time slots")
-            if (vertical == "med_spa") actions.add("Assign to receptionist")
-            if (vertical == "training") actions.add("Assign to enrollment staff")
+            if (vertical.startsWith("zomate_")) actions.add("Assign to front desk / coach team")
         }
         if (intent == "price") actions.add("Send price list / quote")
         if (missing.isNotEmpty()) actions.add("Ask for top missing fields: ${missing.take(2).joinToString(", ")}")
-        if (intent == "complaint" && !safetyEscalate) actions.add("Reply with care instructions + suggest clinic visit")
+        if (intent == "complaint" && !safetyEscalate) {
+            actions.add("Reply with care + suggest medical attention if pain or injury persists")
+        }
         return actions
     }
 }

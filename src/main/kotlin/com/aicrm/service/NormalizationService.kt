@@ -18,10 +18,12 @@ class NormalizationService {
 
     private val locationKeywordsEn = listOf(
         "central", "kowloon", "mong kok", "tst", "tsim sha tsui", "causeway bay", "wan chai",
-        "shatin", "sha tin", "tuen mun", "yuen long", "tai po", "fanling", "kwai fong", "tseung kwan o", "sai kung"
+        "sheung wan", "austin road", "shatin", "sha tin", "tuen mun", "yuen long", "tai po", "fanling",
+        "kwai fong", "tseung kwan o", "sai kung"
     )
     private val locationKeywordsZh = listOf(
-        "中環", "尖沙咀", "旺角", "銅鑼灣", "灣仔", "沙田", "屯門", "元朗", "大埔", "粉嶺", "葵芳", "將軍澳", "西貢", "九龍", "港島", "新界"
+        "中環", "尖沙咀", "旺角", "銅鑼灣", "灣仔", "上環", "柯士甸", "沙田", "屯門", "元朗", "大埔", "粉嶺",
+        "葵芳", "將軍澳", "西貢", "九龍", "港島", "新界"
     )
 
     fun normalizeFields(text: String, vertical: String): ExtractedFields {
@@ -62,8 +64,17 @@ class NormalizationService {
         )
     }
 
+    private fun isZomateVertical(vertical: String) = vertical.startsWith("zomate_")
+
     private fun extractServiceName(text: String, vertical: String): String? {
         val lower = text.lowercase()
+        if (isZomateVertical(vertical)) {
+            if (Regex("試堂|體驗|trial").containsMatchIn(lower)) return "Trial session"
+            if (Regex("會員|membership|月費|package").containsMatchIn(lower)) return "Membership"
+            if (Regex("生酮|keto|飲食|營養").containsMatchIn(lower)) return "Nutrition / keto advisory"
+            if (Regex("一對一|私教|私人教練|personal\\s*trainer|\\bpt\\b").containsMatchIn(lower)) return "1-on-1 personal training"
+            if (Regex("健身|女教練|女子|gym|workout|fitness").containsMatchIn(lower)) return "Women’s gym / PT"
+        }
         if (vertical == "med_spa") {
             if (Regex("laser\\s*hair|脫毛|hair removal").containsMatchIn(lower)) return "Laser hair removal"
             if (Regex("facial|面部").containsMatchIn(lower)) return "Facial"
@@ -80,6 +91,11 @@ class NormalizationService {
 
     fun getMissingFields(extracted: ExtractedFields, vertical: String): List<String> {
         val missing = mutableListOf<String>()
+        if (isZomateVertical(vertical)) {
+            if (extracted.serviceName == null) missing.add("session_type")
+            if (extracted.preferredDates.isNullOrEmpty() && extracted.preferredTime == null) missing.add("preferred_date_time")
+            if (extracted.location == null) missing.add("branch_tst_or_sheung_wan")
+        }
         if (vertical == "med_spa") {
             if (extracted.serviceName == null) missing.add("service")
             if (extracted.preferredDates.isNullOrEmpty() && extracted.preferredTime == null) missing.add("preferred_date_time")

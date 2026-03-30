@@ -1,0 +1,24 @@
+-- Insert Zomate Fitness follow-up cases by 服務範圍 (production Postgres).
+-- Run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/insert-zomate-follow-up-cases.sql
+-- Or: Import Hub → cases CSV upload (zomate-follow-up-cases-production.csv).
+
+INSERT INTO follow_up_cases (id, case_name, contact, status, notes, lead_ref)
+VALUES
+  (gen_random_uuid(), '一對一女子私人教練 — 尖沙咀新客跟進', '+85295151111', 'open',
+   'service_scope:zomate_pt_1on1 | 想週末朝早，已send價錢概覽', NULL),
+  (gen_random_uuid(), '一對一女子私人教練 — 上環塑形計劃', '+85291232222', 'in_progress',
+   'service_scope:zomate_pt_1on1 | 第二個月進度檢視，待約體測', NULL),
+  (gen_random_uuid(), '一對一女子私人教練 — WhatsApp 再聯', '+85293334444', 'pending_contact',
+   'service_scope:zomate_pt_1on1 | 上次未接聽，下午再試', NULL),
+  (gen_random_uuid(), '會員／試堂諮詢 — 體驗課報名', 'trial@example.com', 'scheduled',
+   'service_scope:zomate_membership_trial | 已約本周六試堂', NULL),
+  (gen_random_uuid(), '會員／試堂諮詢 — 月費方案比較', '+85294445555', 'awaiting_reply',
+   'service_scope:zomate_membership_trial | 已發兩個plan，等客戶回覆', NULL),
+  (gen_random_uuid(), '會員／試堂諮詢 — 舊客續會', '+85296667777', 'closed',
+   'service_scope:zomate_membership_trial | 已續12個月', NULL),
+  (gen_random_uuid(), '飲食／生酮健康資訊 — Blog 讀者查詢', 'keto.reader@mail.com', 'new',
+   'service_scope:zomate_nutrition | 問生酮外食建議', NULL),
+  (gen_random_uuid(), '飲食／生酮健康資訊 — 配合訓練餐單', '+85297778888', 'follow_up',
+   'service_scope:zomate_nutrition | 已轉介教練跟進營養方向', NULL),
+  (gen_random_uuid(), '飲食／生酮健康資訊 — 活動後問卷', '+85298889999', 'on_hold',
+   'service_scope:zomate_nutrition | 客戶出埠，四月再跟', NULL);
