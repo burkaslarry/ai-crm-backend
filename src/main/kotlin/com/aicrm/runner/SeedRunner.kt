@@ -13,6 +13,7 @@ import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Component
 import java.time.Instant
 
+/** Seeds automation rules and sample leads via CRM repositories only — never touches `bni_anchor_*`. */
 @Component
 @Order(1)
 class SeedRunner(

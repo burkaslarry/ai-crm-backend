@@ -1,4 +1,6 @@
--- PostgreSQL schema (TEXT instead of CLOB)
+-- PostgreSQL schema for AI CRM only (TEXT instead of CLOB).
+-- Safe on shared DBs (e.g. BNI Render "eventxp"): uses CREATE TABLE IF NOT EXISTS only — no DROP,
+-- no changes to existing bni_anchor_* or other non-CRM tables.
 CREATE TABLE IF NOT EXISTS leads (
     id VARCHAR(36) PRIMARY KEY,
     channel VARCHAR(20) NOT NULL DEFAULT 'web',

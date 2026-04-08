@@ -12,5 +12,6 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
   sql:
+    # Schema applied in RenderDataSourceConfig (schema-postgresql.sql). Avoid default schema.sql (H2-oriented).
     init:
-      mode: always
+      mode: never

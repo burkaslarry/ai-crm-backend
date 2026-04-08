@@ -12,6 +12,9 @@ import javax.sql.DataSource
 /**
  * When running with profile "render", parse DATABASE_URL (postgres://... from Render)
  * and provide a DataSource. Also supports INTERNAL_DATABASE_URL if set by Render when linking a DB.
+ *
+ * Startup runs [schema-postgresql.sql] only: CREATE IF NOT EXISTS for AI CRM tables — no DROP,
+ * safe on a shared Postgres that already has BNI `bni_anchor_*` tables.
  */
 @Configuration
 @Profile("render")
@@ -57,7 +60,12 @@ class RenderDataSourceConfig {
         val hostPort = hostPortPath.substringBefore('/')
         val host = hostPort.substringBeforeLast(':')
         val port = hostPort.substringAfterLast(':').takeIf { it != hostPort }?.toIntOrNull() ?: 5432
-        val jdbcUrl = "jdbc:postgresql://$host:$port/$path"
+        val qMark = hostPortPath.indexOf('?')
+        val query = if (qMark >= 0) hostPortPath.substring(qMark + 1) else ""
+        var jdbcUrl = "jdbc:postgresql://$host:$port/$path"
+        if (query.isNotEmpty()) {
+            jdbcUrl += "?$query"
+        }
         return Triple(jdbcUrl, user, password)
     }
 }

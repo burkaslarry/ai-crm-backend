@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Insert Zomate follow-up cases into production Postgres (requires DATABASE_URL).
+# Insert Zomate demo data into production Postgres (requires DATABASE_URL).
+# Usage:
+#   ./scripts/run-insert-zomate-cases.sh              # follow_up_cases only
+#   ./scripts/run-insert-zomate-cases.sh --leads      # leads + ai_triage + timeline
+#   ./scripts/run-insert-zomate-cases.sh --all        # both
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -8,5 +12,19 @@ if ! command -v psql >/dev/null 2>&1; then
   echo "psql not found. Install PostgreSQL client (e.g. brew install libpq && brew link --force libpq)."
   exit 1
 fi
-psql "$URL" -v ON_ERROR_STOP=1 -f "$ROOT/scripts/insert-zomate-follow-up-cases.sql"
-echo "Inserted Zomate follow-up cases."
+MODE="${1:-}"
+case "$MODE" in
+  --leads)
+    psql "$URL" -v ON_ERROR_STOP=1 -f "$ROOT/scripts/insert-zomate-cases-as-leads.sql"
+    echo "Inserted Zomate leads (+ triage + timeline)."
+    ;;
+  --all)
+    psql "$URL" -v ON_ERROR_STOP=1 -f "$ROOT/scripts/insert-zomate-follow-up-cases.sql"
+    psql "$URL" -v ON_ERROR_STOP=1 -f "$ROOT/scripts/insert-zomate-cases-as-leads.sql"
+    echo "Inserted follow_up_cases and leads."
+    ;;
+  *)
+    psql "$URL" -v ON_ERROR_STOP=1 -f "$ROOT/scripts/insert-zomate-follow-up-cases.sql"
+    echo "Inserted Zomate follow-up cases."
+    ;;
+esac

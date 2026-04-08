@@ -1,6 +1,8 @@
 -- Insert Zomate Fitness follow-up cases by 服務範圍 (production Postgres).
 -- Run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/insert-zomate-follow-up-cases.sql
 -- Or: Import Hub → cases CSV upload (zomate-follow-up-cases-production.csv).
+--
+-- Same content as leads (+ triage): see insert-zomate-cases-as-leads.sql
 
 INSERT INTO follow_up_cases (id, case_name, contact, status, notes, lead_ref)
 VALUES

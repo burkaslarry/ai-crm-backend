@@ -1,0 +1,14 @@
+# Embedded H2 (no Postgres). Usage: SPRING_PROFILES_ACTIVE=h2 ./gradlew bootRun
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/crm;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: false
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
