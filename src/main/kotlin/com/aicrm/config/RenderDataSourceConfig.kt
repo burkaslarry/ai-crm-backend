@@ -29,6 +29,9 @@ class RenderDataSourceConfig {
     @Value("\${RENDER_REGION:singapore}")
     private var renderRegion: String = "singapore"
 
+    @Value("\${RENDER_PG_HOST_SUFFIX:}")
+    private var renderPgHostSuffix: String = ""
+
     @Bean
     fun dataSource(): DataSource {
         val url = databaseUrl.takeIf { it.isNotBlank() } ?: internalDatabaseUrl.takeIf { it.isNotBlank() }
@@ -80,7 +83,15 @@ class RenderDataSourceConfig {
     private fun normalizeRenderHost(host: String): String {
         if (host.contains('.')) return host
         if (!host.startsWith("dpg-")) return host
-        val region = renderRegion.ifBlank { "singapore" }
-        return "$host.$region-postgres.render.com"
+        if (renderPgHostSuffix.isNotBlank()) return "$host.${renderPgHostSuffix.trim()}"
+        val normalizedRegion = renderRegion.lowercase().ifBlank { "singapore" }
+        val regionAlias = when (normalizedRegion) {
+            "sg" -> "singapore"
+            "us-west", "oregon" -> "oregon"
+            "ohio", "us-east" -> "ohio"
+            "frankfurt", "eu-central" -> "frankfurt"
+            else -> normalizedRegion
+        }
+        return "$host.$regionAlias-postgres.render.com"
     }
 }
