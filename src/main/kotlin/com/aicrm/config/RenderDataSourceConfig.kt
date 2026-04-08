@@ -26,6 +26,9 @@ class RenderDataSourceConfig {
     @Value("\${INTERNAL_DATABASE_URL:}")
     private var internalDatabaseUrl: String = ""
 
+    @Value("\${RENDER_REGION:singapore}")
+    private var renderRegion: String = "singapore"
+
     @Bean
     fun dataSource(): DataSource {
         val url = databaseUrl.takeIf { it.isNotBlank() } ?: internalDatabaseUrl.takeIf { it.isNotBlank() }
@@ -58,7 +61,8 @@ class RenderDataSourceConfig {
         val password = if (userInfo.length > user.length + 1) userInfo.substring(user.length + 1) else ""
         val path = hostPortPath.substringAfter('/').substringBefore('?')
         val hostPort = hostPortPath.substringBefore('/')
-        val host = hostPort.substringBeforeLast(':')
+        val hostRaw = hostPort.substringBeforeLast(':')
+        val host = normalizeRenderHost(hostRaw)
         val port = hostPort.substringAfterLast(':').takeIf { it != hostPort }?.toIntOrNull() ?: 5432
         val qMark = hostPortPath.indexOf('?')
         val query = if (qMark >= 0) hostPortPath.substring(qMark + 1) else ""
@@ -67,5 +71,16 @@ class RenderDataSourceConfig {
             jdbcUrl += "?$query"
         }
         return Triple(jdbcUrl, user, password)
+    }
+
+    /**
+     * Some setups accidentally provide Render internal host (e.g. dpg-xxxx) to services
+     * that cannot resolve internal DNS. Convert to an external FQDN fallback.
+     */
+    private fun normalizeRenderHost(host: String): String {
+        if (host.contains('.')) return host
+        if (!host.startsWith("dpg-")) return host
+        val region = renderRegion.ifBlank { "singapore" }
+        return "$host.$region-postgres.render.com"
     }
 }
