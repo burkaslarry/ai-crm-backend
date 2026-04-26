@@ -1,19 +1,24 @@
 package com.aicrm.repository
 
+import com.aicrm.config.DbTableNames
 import com.aicrm.domain.FollowUpCase
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Repository
 
 @Repository
-class FollowUpCaseRepository(private val jdbc: JdbcTemplate) {
+class FollowUpCaseRepository(
+    private val jdbc: JdbcTemplate,
+    tableNames: DbTableNames
+) {
+    private val followUpCasesTable = tableNames.table("follow_up_cases")
 
     fun findAll(): List<FollowUpCase> =
-        jdbc.query("SELECT * FROM follow_up_cases ORDER BY created_at DESC", rowMapper)
+        jdbc.query("SELECT * FROM $followUpCasesTable ORDER BY created_at DESC", rowMapper)
 
     fun insert(c: FollowUpCase) {
         jdbc.update(
-            """INSERT INTO follow_up_cases (id, case_name, contact, status, notes, lead_ref)
+            """INSERT INTO $followUpCasesTable (id, case_name, contact, status, notes, lead_ref)
                VALUES (?, ?, ?, ?, ?, ?)""",
             c.id, c.caseName, c.contact, c.status, c.notes, c.leadRef
         )

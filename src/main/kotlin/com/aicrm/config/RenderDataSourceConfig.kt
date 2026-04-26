@@ -5,13 +5,17 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.ClassPathResource
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator
+import java.nio.charset.StandardCharsets
 import javax.sql.DataSource
 
 @Configuration
 @Profile("render")
-class RenderDataSourceConfig {
+class RenderDataSourceConfig(
+    private val dbTableNames: DbTableNames
+) {
 
     @Value("\${DATABASE_URL:}")
     private var databaseUrl: String = ""
@@ -42,8 +46,12 @@ class RenderDataSourceConfig {
             connectionTimeout = 10000
         }
 
-        // Render profile uses Postgres-only schema file.
-        ResourceDatabasePopulator(ClassPathResource("schema-postgresql.sql")).execute(ds)
+        // Render profile uses Postgres-only schema file, optionally rewritten with a table prefix.
+        val schemaSql =
+            ClassPathResource("schema-postgresql.sql").inputStream.bufferedReader().use { it.readText() }
+        ResourceDatabasePopulator(
+            ByteArrayResource(dbTableNames.schemaSql(schemaSql).toByteArray(StandardCharsets.UTF_8))
+        ).execute(ds)
         return ds
     }
 

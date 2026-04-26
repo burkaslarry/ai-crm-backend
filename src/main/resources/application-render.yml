@@ -6,6 +6,7 @@ server:
 app:
   db:
     dialect: postgresql
+    table-prefix: ${APP_DB_TABLE_PREFIX:aicrm_zomate_}
 
 spring:
   autoconfigure:

@@ -18,3 +18,7 @@ spring:
 logging:
   level:
     org.springframework.web: INFO
+
+app:
+  db:
+    table-prefix: ${APP_DB_TABLE_PREFIX:}

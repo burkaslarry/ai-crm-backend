@@ -1,32 +1,37 @@
 package com.aicrm.repository
 
+import com.aicrm.config.DbTableNames
 import com.aicrm.domain.RagProduct
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Repository
 
 @Repository
-class RagProductRepository(private val jdbc: JdbcTemplate) {
+class RagProductRepository(
+    private val jdbc: JdbcTemplate,
+    tableNames: DbTableNames
+) {
+    private val ragProductsTable = tableNames.table("rag_products")
 
     fun findAll(region: String? = null): List<RagProduct> =
         if (region != null) {
-            jdbc.query("SELECT * FROM rag_products WHERE region = ? ORDER BY created_at DESC", rowMapper, region)
+            jdbc.query("SELECT * FROM $ragProductsTable WHERE region = ? ORDER BY created_at DESC", rowMapper, region)
         } else {
-            jdbc.query("SELECT * FROM rag_products ORDER BY created_at DESC", rowMapper)
+            jdbc.query("SELECT * FROM $ragProductsTable ORDER BY created_at DESC", rowMapper)
         }
 
     fun searchByRegionAndKeyword(region: String?, keyword: String?): List<RagProduct> {
         val keywordParam = keyword?.let { "%$it%" }
         if (region != null && keywordParam != null) {
             return jdbc.query(
-                "SELECT * FROM rag_products WHERE region = ? AND (LOWER(name) LIKE LOWER(?) OR LOWER(COALESCE(description,'')) LIKE LOWER(?)) ORDER BY created_at DESC",
+                "SELECT * FROM $ragProductsTable WHERE region = ? AND (LOWER(name) LIKE LOWER(?) OR LOWER(COALESCE(description,'')) LIKE LOWER(?)) ORDER BY created_at DESC",
                 rowMapper, region, keywordParam, keywordParam
             )
         }
         if (region != null) return findAll(region)
         if (keywordParam != null) {
             return jdbc.query(
-                "SELECT * FROM rag_products WHERE LOWER(name) LIKE LOWER(?) OR LOWER(COALESCE(description,'')) LIKE LOWER(?) ORDER BY created_at DESC",
+                "SELECT * FROM $ragProductsTable WHERE LOWER(name) LIKE LOWER(?) OR LOWER(COALESCE(description,'')) LIKE LOWER(?) ORDER BY created_at DESC",
                 rowMapper, keywordParam, keywordParam
             )
         }
@@ -35,13 +40,13 @@ class RagProductRepository(private val jdbc: JdbcTemplate) {
 
     fun insert(p: RagProduct) {
         jdbc.update(
-            "INSERT INTO rag_products (id, name, description, region) VALUES (?, ?, ?, ?)",
+            "INSERT INTO $ragProductsTable (id, name, description, region) VALUES (?, ?, ?, ?)",
             p.id, p.name, p.description, p.region
         )
     }
 
     fun deleteAll() {
-        jdbc.update("DELETE FROM rag_products")
+        jdbc.update("DELETE FROM $ragProductsTable")
     }
 
     private val rowMapper = RowMapper { rs, _ ->

@@ -1,5 +1,6 @@
 package com.aicrm.repository
 
+import com.aicrm.config.DbTableNames
 import com.aicrm.domain.AutomationRule
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.jdbc.core.JdbcTemplate
@@ -9,25 +10,27 @@ import org.springframework.stereotype.Repository
 @Repository
 class AutomationRuleRepository(
     private val jdbc: JdbcTemplate,
-    @Value("\${app.db.dialect:h2}") private val dialect: String
+    @Value("\${app.db.dialect:h2}") private val dialect: String,
+    tableNames: DbTableNames
 ) {
+    private val automationRulesTable = tableNames.table("automation_rules")
 
     fun findAllByEnabledOrderBySortOrder(): List<AutomationRule> = jdbc.query(
-        "SELECT * FROM automation_rules WHERE enabled = 1 ORDER BY sort_order ASC",
+        "SELECT * FROM $automationRulesTable WHERE enabled = 1 ORDER BY sort_order ASC",
         ruleRowMapper
     )
 
     fun findAllOrderBySortOrder(): List<AutomationRule> = jdbc.query(
-        "SELECT * FROM automation_rules ORDER BY sort_order",
+        "SELECT * FROM $automationRulesTable ORDER BY sort_order",
         ruleRowMapper
     )
 
-    fun count(): Long = jdbc.queryForObject("SELECT COUNT(*) FROM automation_rules", Long::class.java) ?: 0L
+    fun count(): Long = jdbc.queryForObject("SELECT COUNT(*) FROM $automationRulesTable", Long::class.java) ?: 0L
 
     fun save(rule: AutomationRule) {
         if (dialect == "postgresql") {
             jdbc.update(
-                """INSERT INTO automation_rules (id, name, trigger_condition, actions, enabled, sort_order)
+                """INSERT INTO $automationRulesTable (id, name, trigger_condition, actions, enabled, sort_order)
                    VALUES (?, ?, ?, ?, ?, ?)
                    ON CONFLICT (id) DO UPDATE SET
                    name = EXCLUDED.name, trigger_condition = EXCLUDED.trigger_condition,
@@ -36,7 +39,7 @@ class AutomationRuleRepository(
             )
         } else {
             jdbc.update(
-                """MERGE INTO automation_rules (id, name, trigger_condition, actions, enabled, sort_order)
+                """MERGE INTO $automationRulesTable (id, name, trigger_condition, actions, enabled, sort_order)
                    KEY(id) VALUES (?, ?, ?, ?, ?, ?)""",
                 rule.id, rule.name, rule.triggerCondition, rule.actions, rule.enabled, rule.sortOrder
             )

@@ -1,5 +1,6 @@
 package com.aicrm.tools
 
+import com.aicrm.config.DbTableNames
 import java.io.File
 import java.sql.DriverManager
 import java.sql.PreparedStatement
@@ -32,6 +33,7 @@ object MigrateH2FileToPostgres {
             ?: "jdbc:postgresql://localhost:5432/ai_crm_demo"
         val pgUser = System.getenv("POSTGRES_USER") ?: System.getProperty("user.name")
         val pgPassword = System.getenv("POSTGRES_PASSWORD") ?: ""
+        val tablePrefix = System.getenv("APP_DB_TABLE_PREFIX") ?: System.getenv("TABLE_PREFIX") ?: ""
 
         Class.forName("org.h2.Driver")
         Class.forName("org.postgresql.Driver")
@@ -41,9 +43,9 @@ object MigrateH2FileToPostgres {
         DriverManager.getConnection(h2Jdbc, "sa", "").use { h2 ->
             DriverManager.getConnection(pgUrl, pgUser, pgPassword).use { pg ->
                 pg.autoCommit = false
-                truncateTarget(pg)
-                for (table in COPY_ORDER) {
-                    val count = copyTable(h2, pg, table)
+                truncateTarget(pg, tablePrefix)
+                for (table in DbTableNames.TABLES) {
+                    val count = copyTable(h2, pg, tablePrefix, table)
                     println("Copied $count row(s) -> $table")
                 }
                 pg.commit()
@@ -52,44 +54,17 @@ object MigrateH2FileToPostgres {
         println("Migration finished.")
     }
 
-    private fun truncateTarget(pg: java.sql.Connection) {
-        val sql =
-            """
-            TRUNCATE TABLE rag_documents CASCADE;
-            TRUNCATE TABLE leads CASCADE;
-            TRUNCATE TABLE automation_rules RESTART IDENTITY;
-            TRUNCATE TABLE rag_services RESTART IDENTITY;
-            TRUNCATE TABLE rag_products RESTART IDENTITY;
-            TRUNCATE TABLE follow_up_cases RESTART IDENTITY;
-            TRUNCATE TABLE users RESTART IDENTITY;
-            """.trimIndent()
+    private fun truncateTarget(pg: java.sql.Connection, tablePrefix: String) {
+        val targetTables =
+            DbTableNames.TABLES.joinToString(", ") { DbTableNames.qualify(tablePrefix, it) }
+        val sql = "TRUNCATE TABLE $targetTables CASCADE;"
         pg.createStatement().use { st ->
             st.execute(sql)
         }
         println("Target tables truncated (CRM only).")
     }
 
-    /**
-     * FK-safe insert order: parents before children.
-     */
-    private val COPY_ORDER =
-        listOf(
-            "leads",
-            "automation_rules",
-            "rag_services",
-            "rag_products",
-            "rag_documents",
-            "users",
-            "follow_up_cases",
-            "ai_triage",
-            "tasks",
-            "timeline",
-            "slot_suggestions",
-            "scheduled_jobs",
-            "rag_document_links",
-        )
-
-    private fun copyTable(h2: java.sql.Connection, pg: java.sql.Connection, table: String): Int {
+    private fun copyTable(h2: java.sql.Connection, pg: java.sql.Connection, tablePrefix: String, table: String): Int {
         h2.prepareStatement("SELECT * FROM $table").use { sel ->
             sel.executeQuery().use { rs ->
                 val meta = rs.metaData
@@ -98,7 +73,8 @@ object MigrateH2FileToPostgres {
                 val columns = (1..colCount).map { meta.getColumnName(it).lowercase() }
                 val quoted = columns.joinToString(", ") { "\"$it\"" }
                 val placeholders = columns.joinToString(", ") { "?" }
-                val insertSql = "INSERT INTO $table ($quoted) VALUES ($placeholders)"
+                val insertSql =
+                    "INSERT INTO ${DbTableNames.qualify(tablePrefix, table)} ($quoted) VALUES ($placeholders)"
                 pg.prepareStatement(insertSql).use { ins ->
                     var n = 0
                     while (rs.next()) {
